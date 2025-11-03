@@ -1,0 +1,25 @@
+# Terraform state + crash logs
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Terraform plan files
+*.tfplan
+
+# Local-only override files
+*.tfvars
+*.tfvars.json
+terraform.tfvars
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Terraform working dir
+.terraform/
+.terraform.lock.hcl
+
+# Ignore sensitive outputs files if you create any
+secret*.*
+
