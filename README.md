@@ -43,6 +43,7 @@
 │   • NetworkPolicies (default deny)           │
 │   • Resource requests & limits               │
 └──────────────────────────────────────────────┘
+```
 
 ## How to run
 1) Start the cluster
