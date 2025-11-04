@@ -72,6 +72,7 @@ kubectl -n demo get hpa
 ```
 
 ## Cleanup
-
+```text
 terraform destroy -auto-approve
 kind delete cluster --name platform-lab
+```
