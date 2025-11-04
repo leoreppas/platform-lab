@@ -27,3 +27,17 @@ resource "helm_release" "traefik" {
   }
 }
 
+resource "helm_release" "metrics_server" {
+  name       = "metrics-server"
+  repository = "https://kubernetes-sigs.github.io/metrics-server/"
+  chart      = "metrics-server"
+  namespace  = "kube-system"
+
+  # Use YAML values (avoids set/set_list issues)
+  values = [<<-YAML
+    args:
+      - --kubelet-insecure-tls
+      - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+  YAML
+  ]
+}
