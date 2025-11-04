@@ -47,22 +47,31 @@
 
 ## How to run
 1) Start the cluster
+```text
 kind create cluster --config kind-cluster.yaml
+```
 
 2) Deploy platform + apps
+```text
 cd terraform
 terraform init
 terraform apply -auto-approve
+```
 
 3) Test traffic
+```text
 curl http://localhost/     # v1
 curl http://localhost/v2   # v2
+```
 
 4) Check autoscaling and metrics
+```text
 kubectl top nodes
 kubectl -n demo top pods
 kubectl -n demo get hpa
+```
 
 ## Cleanup
+
 terraform destroy -auto-approve
 kind delete cluster --name platform-lab
