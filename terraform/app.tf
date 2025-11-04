@@ -23,6 +23,7 @@ resource "kubernetes_deployment" "whoami" {
 
   spec {
     replicas = 3
+    revision_history_limit = 2
 
     selector {
       match_labels = {
@@ -119,6 +120,7 @@ resource "kubernetes_deployment" "whoami_v2" {
 
   spec {
     replicas = 2
+    revision_history_limit = 2
 
     selector {
       match_labels = {
@@ -218,24 +220,25 @@ resource "kubernetes_ingress_v1" "whoami" {
     rule {
       host = "localhost"
       http {
-        # / -> v1
+        # / -> v2 (new default)
         path {
           path      = "/"
           path_type = "Prefix"
           backend {
             service {
-              name = kubernetes_service.whoami.metadata[0].name
+              name = kubernetes_service.whoami_v2.metadata[0].name
               port { number = 80 }
             }
           }
         }
-        # /v2 -> v2
+
+        # /v1 -> old service
         path {
-          path      = "/v2"
+          path      = "/v1"
           path_type = "Prefix"
           backend {
             service {
-              name = kubernetes_service.whoami_v2.metadata[0].name
+              name = kubernetes_service.whoami.metadata[0].name
               port { number = 80 }
             }
           }
@@ -246,4 +249,90 @@ resource "kubernetes_ingress_v1" "whoami" {
 
   # ensure Traefik is installed first (defined in traefik.tf)
   depends_on = [helm_release.traefik]
+}
+
+resource "kubernetes_network_policy_v1" "default_deny" {
+  metadata {
+    name      = "default-deny-ingress"
+    namespace = kubernetes_namespace.demo.metadata[0].name
+  }
+
+  spec {
+    pod_selector {}  
+    policy_types = ["Ingress"]
+  }
+}
+
+resource "kubernetes_network_policy_v1" "allow_from_traefik" {
+  metadata {
+    name      = "allow-from-traefik"
+    namespace = kubernetes_namespace.demo.metadata[0].name
+  }
+
+  spec {
+    pod_selector {
+      match_expressions {
+        key = "app"
+        operator = "In"
+        values = ["whoami", "whoami-v2"]
+      }
+    }
+
+    policy_types = ["Ingress"]
+
+    ingress {
+      from {
+        namespace_selector {
+          match_labels = {
+            "kubernetes.io/metadata.name" = "traefik"
+          }
+        }
+
+        pod_selector {
+          match_labels = {
+            "app.kubernetes.io/name" = "traefik"
+          }
+        }
+      }
+
+      ports {
+        protocol = "TCP"
+        port     = 80
+      }
+    }
+  }
+}
+
+
+# -------------------------
+# PodDistributionBudgets
+# -------------------------
+resource "kubernetes_pod_disruption_budget_v1" "whoami" {
+  metadata {
+    name      = "whoami-pdb"
+    namespace = kubernetes_namespace.demo.metadata[0].name
+  }
+  spec {
+    min_available = 1
+    selector {
+      match_labels = {
+        app = "whoami"
+      }
+    }
+  }
+}
+
+resource "kubernetes_pod_disruption_budget_v1" "whoami_v2" {
+  metadata {
+    name      = "whoami-v2-pdb"
+    namespace = kubernetes_namespace.demo.metadata[0].name
+  }
+  spec {
+    min_available = 1
+    selector {
+      match_labels = {
+        app = "whoami-v2"
+      }
+    }
+  }
 }
