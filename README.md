@@ -17,27 +17,32 @@
 | metrics-server                   | Enables autoscaling (`kubectl top`, HPA)     |
 
 ## Architecture
-┌───────────────────────────────────┐
-│              kind                 │
-│         (local K8s cluster)       │
-│                                   │
-│  ┌──────── Traefik Ingress ─────┐ │
-│  │   Host: localhost             │ │
-│  │   /     → whoami v1           │ │
-│  │   /v1  → whoami v1            │ │
-│  │   /v2  → whoami v2            │ │
-│  └───────────────────────────────┘ │
-│                                   │
-│  Deployments + Services + HPAs    │
-│   ├── whoami (v1) (2–6 replicas)  │
-│   └── whoami-v2 (2–6 replicas)    │
-│                                   │
-│  Policies                         │
-│   ├── PDBs                        │
-│   ├── NetworkPolicies             │
-│   ├── RollingUpdate strategy      │
-│   └── Probes & Resource limits    │
-└───────────────────────────────────┘
+```text
+┌──────────────────────────────────────────────┐
+│                  kind Cluster                │
+│             (local Kubernetes)               │
+│                                              │
+│  ┌────────────── Ingress (Traefik) ─────────┐│
+│  │ Host: localhost                          ││
+│  │                                          ││
+│  │ /    ──► whoami (v1) Deployment          ││
+│  │ /v1  ──► whoami (v1) Deployment          ││
+│  │ /v2  ──► whoami (v2) Deployment          ││
+│  └──────────────────────────────────────────┘│
+│                                              │
+│  Deployments & Services                      │
+│   • whoami (v1)                              │
+│       └─ ClusterIP, HPA (2–6 replicas)       │
+│   • whoami-v2                                │
+│       └─ ClusterIP, HPA (2–6 replicas)       │
+│                                              │
+│  Reliability Controls                        │
+│   • Liveness & Readiness probes              │
+│   • PodDisruptionBudgets                     │
+│   • RollingUpdate (maxUnavailable = 0)       │
+│   • NetworkPolicies (default deny)           │
+│   • Resource requests & limits               │
+└──────────────────────────────────────────────┘
 
 ## How to run
 1) Start the cluster
